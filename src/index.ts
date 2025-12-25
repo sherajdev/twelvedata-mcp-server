@@ -1,7 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
+import cors from "cors";
 
 import { ResponseFormat } from "./constants.js";
 import {
@@ -468,6 +470,7 @@ async function runStdio(): Promise<void> {
 
 async function runHTTP(): Promise<void> {
   const app = express();
+  app.use(cors());
   app.use(express.json());
 
   // Health check
@@ -475,7 +478,7 @@ async function runHTTP(): Promise<void> {
     res.json({ status: "ok", server: "twelvedata-mcp-server" });
   });
 
-  // MCP endpoint
+  // MCP endpoint (Streamable HTTP)
   app.post("/mcp", async (req, res) => {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
@@ -486,9 +489,28 @@ async function runHTTP(): Promise<void> {
     await transport.handleRequest(req, res, req.body);
   });
 
+  // SSE transport for n8n compatibility
+  let sseTransport: SSEServerTransport | null = null;
+
+  app.get("/sse", async (req, res) => {
+    sseTransport = new SSEServerTransport("/messages", res);
+    await server.connect(sseTransport);
+    await sseTransport.start();
+  });
+
+  app.post("/messages", async (req, res) => {
+    if (!sseTransport) {
+      res.status(400).json({ error: "No SSE connection established" });
+      return;
+    }
+    await sseTransport.handlePostMessage(req, res);
+  });
+
   const port = parseInt(process.env.PORT || "3000");
   app.listen(port, () => {
-    console.error(`Twelve Data MCP Server running on http://localhost:${port}/mcp`);
+    console.error(`Twelve Data MCP Server running on http://localhost:${port}`);
+    console.error(`  - Streamable HTTP: POST /mcp`);
+    console.error(`  - SSE: GET /sse, POST /messages`);
     console.error("Ensure TWELVEDATA_API_KEY environment variable is set");
   });
 }

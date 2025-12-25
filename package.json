@@ -1,0 +1,36 @@
+{
+  "name": "twelvedata-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for fetching forex, metals (XAUUSD, XAGUSD), crypto, and stock prices using Twelve Data API",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "twelvedata",
+    "forex",
+    "metals",
+    "xauusd",
+    "xagusd",
+    "gold",
+    "silver",
+    "trading",
+    "crypto"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "express": "^4.21.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

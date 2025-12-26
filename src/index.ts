@@ -490,20 +490,30 @@ async function runHTTP(): Promise<void> {
   });
 
   // SSE transport for n8n compatibility
-  let sseTransport: SSEServerTransport | null = null;
+  const sseTransports = new Map<string, SSEServerTransport>();
 
   app.get("/sse", async (req, res) => {
-    sseTransport = new SSEServerTransport("/messages", res);
-    await server.connect(sseTransport);
-    await sseTransport.start();
+    const transport = new SSEServerTransport("/messages", res);
+    sseTransports.set(transport.sessionId, transport);
+
+    res.on("close", () => {
+      sseTransports.delete(transport.sessionId);
+    });
+
+    await server.connect(transport);
+    await transport.start();
   });
 
   app.post("/messages", async (req, res) => {
-    if (!sseTransport) {
-      res.status(400).json({ error: "No SSE connection established" });
+    const sessionId = req.query.sessionId as string;
+    const transport = sseTransports.get(sessionId);
+
+    if (!transport) {
+      res.status(400).json({ error: "Invalid or expired session" });
       return;
     }
-    await sseTransport.handlePostMessage(req, res);
+
+    await transport.handlePostMessage(req, res);
   });
 
   const port = parseInt(process.env.PORT || "3000");

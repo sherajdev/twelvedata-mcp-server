@@ -501,7 +501,7 @@ async function runHTTP(): Promise<void> {
     });
 
     await server.connect(transport);
-    await transport.start();
+    // Note: connect() automatically calls start(), don't call it again
   });
 
   app.post("/messages", async (req, res) => {

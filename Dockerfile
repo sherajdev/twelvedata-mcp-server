@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Cache bust: v3-sse-sessions
+# Cache bust: v4-fix-double-start
 COPY package*.json ./
 RUN npm install
 
